@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: fr.theshark34.s-update:s-update:3.1.0-BETA">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/fr/theshark34/s-update/s-update/3.1.0-BETA/s-update-3.1.0-BETA.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/fr/theshark34/s-update/s-update/3.1.0-BETA/s-update-3.1.0-BETA-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/fr/theshark34/s-update/s-update/3.1.0-BETA/s-update-3.1.0-BETA-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
