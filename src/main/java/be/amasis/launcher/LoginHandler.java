@@ -3,6 +3,9 @@ package be.amasis.launcher;
 import fr.litarvan.openauth.AuthPoints;
 import fr.litarvan.openauth.AuthenticationException;
 import fr.litarvan.openauth.Authenticator;
+import fr.litarvan.openauth.microsoft.MicrosoftAuthResult;
+import fr.litarvan.openauth.microsoft.MicrosoftAuthenticationException;
+import fr.litarvan.openauth.microsoft.MicrosoftAuthenticator;
 import fr.litarvan.openauth.model.AuthAgent;
 import fr.litarvan.openauth.model.response.AuthResponse;
 import fr.theshark34.openlauncherlib.LaunchException;
@@ -30,30 +33,43 @@ public class LoginHandler {
     private static Thread update;
     private static CrashReporter reporter = new CrashReporter(StartHandler.NAME, crashDir);
 
-    public static void auth(String user, String pwd) throws AuthenticationException {
+    public static void authlast(String user, String pwd) throws AuthenticationException {
         Authenticator authenticator = new Authenticator(Authenticator.MOJANG_AUTH_URL, AuthPoints.NORMAL_AUTH_POINTS);
         AuthResponse authResponse = authenticator.authenticate(AuthAgent.MINECRAFT, user, pwd, "");
         authInfos = new AuthInfos(authResponse.getSelectedProfile().getName(), authResponse.getAccessToken(), authResponse.getSelectedProfile().getId());
+
+    }
+
+    public static void authMicro(String user, String pwd) throws AuthenticationException {
+        MicrosoftAuthenticator AuthAgent = new MicrosoftAuthenticator();
+        MicrosoftAuthResult result = null;
+        try {
+            result = AuthAgent.loginWithCredentials(user, pwd);
+        } catch (MicrosoftAuthenticationException e) {
+            e.printStackTrace();
+        }
+        authInfos = new AuthInfos(result.getProfile().getName(), result.getAccessToken(), result.getProfile().getId());
     }
 
     public static void update() throws BadServerResponseException, IOException, BadServerVersionException, ServerDisabledException, ServerMissingSomethingException {
         SUpdate server = new SUpdate(ip, dir);
         server.getServerRequester().setRewriteEnabled(true);
-        update = new Thread(){
-            private int val,max;
-            public void run(){
-                while(!isInterrupted()){
-                    if(BarAPI.getNumberOfFileToDownload() == 0){
+        update = new Thread() {
+            private int val, max;
+
+            public void run() {
+                while (!isInterrupted()) {
+                    if (BarAPI.getNumberOfFileToDownload() == 0) {
                         StartHandler.getFrame().getPanel().setInfoText("Vérification des fichiers...");
-                    }else{
+                    } else {
                         val = BarAPI.getNumberOfDownloadedFiles();
                         max = BarAPI.getNumberOfFileToDownload();
                         StartHandler.getFrame().getPanel().getProgressBar().setValue((int) BarAPI.getNumberOfTotalDownloadedBytes());
                         StartHandler.getFrame().getPanel().getProgressBar().setMaximum((int) BarAPI.getNumberOfTotalBytesToDownload());
-                        if(val > max){
+                        if (val > max) {
                             StartHandler.getFrame().getPanel().setInfoText("Téléchargement des fichiers terminés.");
-                        }else{
-                            StartHandler.getFrame().getPanel().setInfoText("Téléchargement en cours: "+val+"/"+max);
+                        } else {
+                            StartHandler.getFrame().getPanel().setInfoText("Téléchargement en cours: " + val + "/" + max);
                         }
 
                     }

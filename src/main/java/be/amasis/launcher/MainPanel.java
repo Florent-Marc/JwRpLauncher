@@ -16,14 +16,15 @@ public class MainPanel extends JPanel implements MouseListener {
     private Saver saver = new Saver(StartHandler.PROPS_FILE);
     private JTextField username = new JTextField(saver.get("username"));
     private JPasswordField password;
-    private JButton playButton;
+    private final JButton playButton;
+    private final JButton micro;
     private JCheckBox savePwd;
     private JProgressBar progressBar;
     private JLabel info;
 
     public MainPanel() {
         setLayout(null);
-        if(StartHandler.PROPS_FILE.exists()){
+        if (StartHandler.PROPS_FILE.exists()) {
             try {
                 if (saver.get("savePwd?").equals("true")) {
                     password = new JPasswordField(decrypt(saver.get("password")));
@@ -31,7 +32,7 @@ public class MainPanel extends JPanel implements MouseListener {
                     password = new JPasswordField();
                     saver.set("password", "");
                 }
-            }catch (NullPointerException ignored){
+            } catch (NullPointerException ignored) {
                 password = new JPasswordField();
             }
         }else{
@@ -44,6 +45,7 @@ public class MainPanel extends JPanel implements MouseListener {
             password = new JPasswordField();
         }
         playButton = new JButton("Jouer");
+        micro = new JButton("Microsoft");
         progressBar = new JProgressBar();
         info = new JLabel("Clique sur jouer!", 0);
         savePwd = new JCheckBox("Sauvegarder le mot de passe");
@@ -89,22 +91,22 @@ public class MainPanel extends JPanel implements MouseListener {
         username.setFont(userLabel.getFont().deriveFont(18f));
         username.setOpaque(false);
         username.setBorder(BorderFactory.createLineBorder(StartHandler.COLOR_APPHEADER, 2));
-        username.setBounds(StartHandler.getCenteredXPos(200), 157,200,35);
+        username.setBounds(StartHandler.getCenteredXPos(200), 157, 200, 35);
         username.setText(saver.get("username", ""));
         username.setHorizontalAlignment(SwingConstants.CENTER);
         username.setDisabledTextColor(StartHandler.COLOR.brighter());
         add(username);
         JLabel pwLabel = new JLabel("Mot de passe:", SwingConstants.CENTER);
-        pwLabel.setForeground(new Color(255,255,255));
+        pwLabel.setForeground(new Color(255, 255, 255));
         pwLabel.setFont(userLabel.getFont());
-        pwLabel.setBounds(StartHandler.getCenteredXPos(350),240,350,30);
+        pwLabel.setBounds(StartHandler.getCenteredXPos(350), 240, 350, 30);
         add(pwLabel);
-        password.setCaretColor(new Color(255,255,255));
-        password.setForeground(new Color(255,255,255));
+        password.setCaretColor(new Color(255, 255, 255));
+        password.setForeground(new Color(255, 255, 255));
         password.setFont(password.getFont().deriveFont(18f));
         password.setOpaque(false);
-        password.setBorder(BorderFactory.createLineBorder(StartHandler.COLOR_APPHEADER,2));
-        password.setBounds(StartHandler.getCenteredXPos(200), 277,200,35);
+        password.setBorder(BorderFactory.createLineBorder(StartHandler.COLOR_APPHEADER, 2));
+        password.setBounds(StartHandler.getCenteredXPos(200), 277, 200, 35);
         password.setHorizontalAlignment(SwingConstants.CENTER);
         password.setDisabledTextColor(StartHandler.COLOR.brighter());
         add(password);
@@ -112,20 +114,26 @@ public class MainPanel extends JPanel implements MouseListener {
         playButton.addMouseListener(this);
         playButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         playButton.setFont(StartHandler.CUSTOM_FONT.deriveFont(26f));
-        playButton.setBounds(StartHandler.getCenteredXPos(200), 420,200,30);
+        playButton.setBounds(StartHandler.getCenteredXPos(200), 420, 200, 30);
         add(playButton);
+        micro.setBackground(StartHandler.COLOR);
+        micro.addMouseListener(this);
+        micro.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        micro.setFont(StartHandler.CUSTOM_FONT.deriveFont(26f));
+        micro.setBounds(StartHandler.getCenteredXPos(200), 450, 200, 30);
+        add(micro);
         progressBar.setStringPainted(true);
-        progressBar.setBackground(new Color(StartHandler.COLOR.getRed(),StartHandler.COLOR.getGreen(),
-                StartHandler.COLOR.getBlue(),23));
+        progressBar.setBackground(new Color(StartHandler.COLOR.getRed(), StartHandler.COLOR.getGreen(),
+                StartHandler.COLOR.getBlue(), 23));
         progressBar.setForeground(StartHandler.COLOR);
         progressBar.setBorderPainted(false);
         progressBar.setOpaque(false);
 
-        progressBar.setBounds(10, StartHandler.HEIGHT-60,StartHandler.WIDTH-20,40);
+        progressBar.setBounds(10, StartHandler.HEIGHT - 60, StartHandler.WIDTH - 20, 40);
         add(progressBar);
         info.setFont(username.getFont());
         info.setForeground(StartHandler.COLOR);
-        info.setBounds(10, StartHandler.HEIGHT-125,StartHandler.WIDTH-20,55);
+        info.setBounds(10, StartHandler.HEIGHT - 125, StartHandler.WIDTH - 20, 55);
         add(info);
 
     }
@@ -146,7 +154,7 @@ public class MainPanel extends JPanel implements MouseListener {
             }
             Thread t = new Thread(() -> {
                 try{
-                    LoginHandler.auth(username.getText(), String.valueOf(password.getPassword()));
+                    LoginHandler.authlast(username.getText(), String.valueOf(password.getPassword()));
                 } catch (AuthenticationException e1) {
                     JOptionPane.showMessageDialog(this,
                             "ERREUR: Impossible de se connecter: \n" +
@@ -163,19 +171,63 @@ public class MainPanel extends JPanel implements MouseListener {
                     saver.set("password", "null");
                     saver.set("savePwd?", "true");
                 }
-                try{
+                try {
                     LoginHandler.update();
-                }catch (Exception e2){
+                } catch (Exception e2) {
                     LoginHandler.interruptUpdate();
                     LoginHandler.getReporter().catchError(e2, "Impossible de mettre le launcher à jour.");
                     setFieldsEnabled(true);
                     return;
                 }
-                try{
+                try {
                     LoginHandler.launch();
                 } catch (LaunchException e3) {
                     LoginHandler.interruptUpdate();
-                    LoginHandler.getReporter().catchError(e3,"Impossible de lancer le jeu.");
+                    LoginHandler.getReporter().catchError(e3, "Impossible de lancer le jeu.");
+                    setFieldsEnabled(true);
+                }
+            });
+            t.start();
+        }
+        if (e.getSource() == micro) {
+            setFieldsEnabled(false);
+            if ((username.getText().replaceAll(" ", "").length() == 0) || (password.getPassword().length == 0)) {
+                JOptionPane.showMessageDialog(this, "ERREUR: Adresse mail |Mot de passe invalide", "Erreur de connexion", 2);
+                setFieldsEnabled(true);
+            }
+            Thread t = new Thread(() -> {
+
+                try {
+                    LoginHandler.authMicro(username.getText(), String.valueOf(password.getPassword()));
+                } catch (AuthenticationException e1) {
+                    JOptionPane.showMessageDialog(this,
+                            "ERREUR: Impossible de se connecter: \n" +
+                                    e1.getErrorModel().getErrorMessage(), "Erreur de connexion", 2);
+                    setFieldsEnabled(true);
+                    return;
+                }
+                saver.set("username", username.getText());
+                if (savePwd.isSelected()) {
+                    String pwd = encrypt(String.valueOf(password.getPassword()));
+                    saver.set("password", pwd);
+                    saver.set("savePwd?", "true");
+                } else {
+                    saver.set("password", "null");
+                    saver.set("savePwd?", "true");
+                }
+                try {
+                    LoginHandler.update();
+                } catch (Exception e2) {
+                    LoginHandler.interruptUpdate();
+                    LoginHandler.getReporter().catchError(e2, "Impossible de mettre le launcher à jour.");
+                    setFieldsEnabled(true);
+                    return;
+                }
+                try {
+                    LoginHandler.launch();
+                } catch (LaunchException e3) {
+                    LoginHandler.interruptUpdate();
+                    LoginHandler.getReporter().catchError(e3, "Impossible de lancer le jeu.");
                     setFieldsEnabled(true);
                 }
             });
