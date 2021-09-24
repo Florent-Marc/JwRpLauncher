@@ -33,21 +33,32 @@ public class LoginHandler {
     private static Thread update;
     private static CrashReporter reporter = new CrashReporter(StartHandler.NAME, crashDir);
 
-    public static void authlast(String user, String pwd) throws AuthenticationException {
+
+    //Since Microsoft is now predominant on mojang auth, we try it first
+
+    public static void auth(String user, String pwd) throws AuthenticationException {
+        try{
+            authMicro(user, pwd);
+        }catch (MicrosoftAuthenticationException ignored){
+            try{
+                authMojang(user, pwd);
+            } catch (AuthenticationException ignored1){
+                //Invalid credentials
+                throw ignored1;
+            }
+        }
+    }
+
+    public static void authMojang(String user, String pwd) throws AuthenticationException {
         Authenticator authenticator = new Authenticator(Authenticator.MOJANG_AUTH_URL, AuthPoints.NORMAL_AUTH_POINTS);
         AuthResponse authResponse = authenticator.authenticate(AuthAgent.MINECRAFT, user, pwd, "");
         authInfos = new AuthInfos(authResponse.getSelectedProfile().getName(), authResponse.getAccessToken(), authResponse.getSelectedProfile().getId());
 
     }
 
-    public static void authMicro(String user, String pwd) throws AuthenticationException {
+    public static void authMicro(String user, String pwd) throws MicrosoftAuthenticationException {
         MicrosoftAuthenticator AuthAgent = new MicrosoftAuthenticator();
-        MicrosoftAuthResult result = null;
-        try {
-            result = AuthAgent.loginWithCredentials(user, pwd);
-        } catch (MicrosoftAuthenticationException e) {
-            e.printStackTrace();
-        }
+        MicrosoftAuthResult result = AuthAgent.loginWithCredentials(user, pwd);
         authInfos = new AuthInfos(result.getProfile().getName(), result.getAccessToken(), result.getProfile().getId());
     }
 
@@ -104,4 +115,6 @@ public class LoginHandler {
     public static CrashReporter getReporter() {
         return reporter;
     }
+
+
 }
